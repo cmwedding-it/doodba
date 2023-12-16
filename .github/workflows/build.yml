@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check out to doodba source
         uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
           path: src
     
       - name: Replace dockerfile with patched one
-        run: mv 15.0.Dockerfile src/
+        run: rm src/15.0.Dockerfile && mv Dockerfile src/15.0.Dockerfile
     
       - name: Get date & commit sha
         run: |
@@ -45,7 +45,7 @@ jobs:
             VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
             BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
           containerfiles: |
-            15.0.Dockerfile
+            src/15.0.Dockerfile
           extra-args: |
             --target onbuild
           context: ./src
