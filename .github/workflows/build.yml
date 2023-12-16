@@ -16,6 +16,9 @@ jobs:
   base:
     runs-on: ubuntu-22.04
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
       - name: Check out to doodba source
         uses: actions/checkout@v2
         with:
