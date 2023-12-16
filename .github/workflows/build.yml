@@ -1,4 +1,4 @@
-name: arm64 Docker image
+name: Docker image for 15.0
 
 on:
   workflow_dispatch:
