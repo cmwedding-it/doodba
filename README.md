@@ -2,7 +2,8 @@
 
 # doodba
 
-This project hosts doodba 15.0 images which is based on `python:3.11-slim-bookworm` instead of the regular `python:3.8-slim-bullseye`.
+This project hosts doodba 15.0 images which is based on `python:3.10-slim-bookworm` instead of the regular `python:3.8-slim-bullseye`.  
+It also contains patches from the `17.0` Dockerfile.
 
 # Credits
 
