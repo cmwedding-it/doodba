@@ -23,6 +23,11 @@ jobs:
     
       - name: Patch dockerfile to use debian bookworm & python 3.12
         run: sed -i "s/FROM python:3.8-slim-bullseye AS base/FROM python:3.12-slim-bookworm AS base/" 15.0.Dockerfile
+    
+      - name: Get date
+        run: |
+          echo "DATE=$(date --rfc-3339 ns)" >> $GITHUB_OUTPUT
+        id: date
 
       - name: Build onbuild
         id: build_image_onbuild
@@ -30,6 +35,10 @@ jobs:
         with:
           image: ${{ env.IMAGE_NAME }}
           tags: 15.0-bookworm-onbuild
+          build-args: |
+            ODOO_VERSION=15.0
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.date.outputs.DATE }}
           containerfiles: |
             15.0.Dockerfile
           extra-args: |
