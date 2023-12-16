@@ -20,14 +20,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Tecnativa/doodba
+          path: src
     
-      - name: Patch dockerfile to use debian bookworm & python 3.12
-        run: sed -i "s/FROM python:3.8-slim-bullseye AS base/FROM python:3.12-slim-bookworm AS base/" 15.0.Dockerfile
+      - name: Replace dockerfile with patched one
+        run: mv 15.0.Dockerfile src/
     
-      - name: Get date
+      - name: Get date & commit sha
         run: |
-          echo "DATE=$(date --rfc-3339 ns)" >> $GITHUB_OUTPUT
-        id: date
+          echo "BUILD_DATE=$(date --rfc-3339 ns)" >> $GITHUB_OUTPUT && \
+          echo "VCS_REF=$(git -C src rev-parse HEAD)" >> $GITHUB_OUTPUT
+        id: build_args
 
       - name: Build onbuild
         id: build_image_onbuild
@@ -37,12 +39,13 @@ jobs:
           tags: 15.0-bookworm-onbuild
           build-args: |
             ODOO_VERSION=15.0
-            VCS_REF=${{ github.sha }}
-            BUILD_DATE=${{ steps.date.outputs.DATE }}
+            VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
+            BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
           containerfiles: |
             15.0.Dockerfile
           extra-args: |
             --target onbuild
+          context: ./src
 
       - name: Push onbuild to GHCR
         uses: redhat-actions/push-to-registry@v2
