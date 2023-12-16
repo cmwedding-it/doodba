@@ -1,0 +1,46 @@
+name: arm64 Docker image
+
+on:
+  workflow_dispatch:
+    
+permissions:
+  packages: write
+
+env:
+  IMAGE_NAME: doodba
+  IMAGE_REGISTRY: ghcr.io/cmwedding-it
+  REGISTRY_USER: oskardotglobal
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+    
+jobs:
+  base:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out to doodba source
+        uses: actions/checkout@v2
+        with:
+          repository: Tecnativa/doodba
+    
+      - name: Patch dockerfile to use debian bookworm & python 3.12
+        run: sed -i "s/FROM python:3.8-slim-bullseye AS base/FROM python:3.12-slim-bookworm AS base/" 15.0.Dockerfile
+
+      - name: Build onbuild
+        id: build_image_onbuild
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: 15.0-bookworm-onbuild
+          containerfiles: |
+            15.0.Dockerfile
+          extra-args: |
+            --target onbuild
+
+      - name: Push onbuild to GHCR
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build_image_onbuild.outputs.image }}
+          tags: ${{ steps.build_image_onbuild.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+    
