@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:1.2
+# syntax = docker/dockerfile:1
 FROM python:3.10-slim-bookworm AS base
 
 EXPOSE 8069 8072
