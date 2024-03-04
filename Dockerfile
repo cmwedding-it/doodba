@@ -241,6 +241,6 @@ ONBUILD RUN [ -d ~root/.ssh ] && rm -r ~root/.ssh; \
             && sync
 
 ONBUILD ARG DB_VERSION=latest
-ONBUILD RUN --mount=type=cache,target=/var/cache/apt ---mount=type=cache,target=/root/.cache /opt/odoo/common/build && sync
+ONBUILD RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/root/.cache /opt/odoo/common/build && sync
 ONBUILD VOLUME ["/var/lib/odoo"]
 ONBUILD USER odoo
