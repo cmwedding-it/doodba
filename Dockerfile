@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:1.2
 FROM python:3.10-slim-bookworm AS base
 
 EXPOSE 8069 8072
@@ -228,6 +229,9 @@ ONBUILD ENV ADMIN_PASSWORD="$ADMIN_PASSWORD" \
 ONBUILD ARG LOCAL_CUSTOM_DIR=./custom
 ONBUILD COPY --chown=root:odoo $LOCAL_CUSTOM_DIR /opt/odoo/custom
 
+# Do not delete apt cache
+ONBUILD RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
 # https://docs.python.org/3/library/logging.html#levels
 ONBUILD ARG LOG_LEVEL=INFO
 ONBUILD RUN [ -d ~root/.ssh ] && rm -r ~root/.ssh; \
@@ -235,7 +239,8 @@ ONBUILD RUN [ -d ~root/.ssh ] && rm -r ~root/.ssh; \
             && ln -s /opt/odoo/custom/ssh ~root/.ssh \
             && chmod -R u=rwX,go= /opt/odoo/custom/ssh \
             && sync
+
 ONBUILD ARG DB_VERSION=latest
-ONBUILD RUN /opt/odoo/common/build && sync
+ONBUILD RUN --mount=type=cache,target=/var/cache/apt ---mount=type=cache,target=/root/.cache /opt/odoo/common/build && sync
 ONBUILD VOLUME ["/var/lib/odoo"]
 ONBUILD USER odoo

@@ -27,6 +27,10 @@ jobs:
     
       - name: Replace dockerfile with patched one
         run: rm src/15.0.Dockerfile && mv Dockerfile src/15.0.Dockerfile
+
+      - name: Patch pip installer to allow caching
+        run: |
+          sed -i -E 's/^    _install_command = \["pip", "install", "--no-cache-dir", "-r"\]$/    _install_command = \["pip", "install", "-r"\]/' lib/doodbalib/installer.py
     
       - name: Get date & commit sha
         run: |
