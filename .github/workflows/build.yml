@@ -30,7 +30,7 @@ jobs:
 
       - name: Patch pip installer to allow caching
         run: |
-          sed -i -E 's/^    _install_command = \["pip", "install", "--no-cache-dir", "-r"\]$/    _install_command = \["pip", "install", "-r"\]/' lib/doodbalib/installer.py
+          sed -i -E 's/^    _install_command = \["pip", "install", "--no-cache-dir", "-r"\]$/    _install_command = \["pip", "install", "-r"\]/' src/lib/doodbalib/installer.py
     
       - name: Get date & commit sha
         run: |
