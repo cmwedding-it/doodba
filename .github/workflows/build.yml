@@ -67,8 +67,6 @@ jobs:
             BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
           containerfiles: |
             src/onbuild.Dockerfile
-          extra-args: |
-            --target onbuild
           context: ./src
 
       - name: Push onbuild to GHCR
