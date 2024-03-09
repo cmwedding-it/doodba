@@ -5,12 +5,6 @@ on:
     
 permissions:
   packages: write
-
-env:
-  IMAGE_NAME: doodba
-  IMAGE_REGISTRY: ghcr.io/cmwedding-it
-  REGISTRY_USER: oskardotglobal
-  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
     
 jobs:
   base:
@@ -25,8 +19,8 @@ jobs:
           repository: Tecnativa/doodba
           path: src
     
-      - name: Replace dockerfile with patched one
-        run: rm src/15.0.Dockerfile && mv Dockerfile src/15.0.Dockerfile
+      - name: Move custom dockerfiles to src
+        run: mv *.Dockerfile src/
 
       - name: Patch pip installer to allow caching
         run: |
@@ -38,18 +32,41 @@ jobs:
           echo "VCS_REF=$(git -C src rev-parse HEAD)" >> $GITHUB_OUTPUT
         id: build_args
 
+      - name: Build base
+        id: build_image_base
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: doodba
+          tags: 15.0-bookworm
+          build-args: |
+            ODOO_VERSION=15.0
+            VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
+            BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
+          containerfiles: |
+            src/base.Dockerfile
+          context: ./src
+
+      - name: Push base to GHCR
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build_image_base.outputs.image }}
+          tags: ${{ steps.build_image_base.outputs.tags }}
+          registry: ghcr.io/cmwedding-it
+          username: oskardotglobal
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build onbuild
         id: build_image_onbuild
         uses: redhat-actions/buildah-build@v2
         with:
-          image: ${{ env.IMAGE_NAME }}
+          image: doodba
           tags: 15.0-bookworm-onbuild
           build-args: |
             ODOO_VERSION=15.0
             VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
             BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
           containerfiles: |
-            src/15.0.Dockerfile
+            src/onbuild.Dockerfile
           extra-args: |
             --target onbuild
           context: ./src
@@ -59,7 +76,7 @@ jobs:
         with:
           image: ${{ steps.build_image_onbuild.outputs.image }}
           tags: ${{ steps.build_image_onbuild.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
+          registry: ghcr.io/cmwedding-it
+          username: oskardotglobal
+          password: ${{ secrets.GITHUB_TOKEN }}
     
