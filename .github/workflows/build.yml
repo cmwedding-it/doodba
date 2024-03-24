@@ -67,6 +67,7 @@ jobs:
         with:
           context: ./src
           file: ./src/${{ matrix.odoo_version }}.Dockerfile
+          push: true
           platforms: ${{ matrix.platforms }}
           tags: |
             ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}
@@ -82,6 +83,7 @@ jobs:
         with:
           context: .
           file: ./onbuild.Dockerfile
+          push: true
           platforms: ${{ matrix.platforms }}
           tags: |
             ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}-onbuild
