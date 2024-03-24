@@ -41,8 +41,8 @@ jobs:
           repository: Tecnativa/doodba
           path: src
 
-      - name: Move custom dockerfiles to src
-        run: mv *.Dockerfile src/
+      - name: Copy custom dockerfiles to src
+        run: cp *.Dockerfile src/
 
       - name: Patch pip installer to allow caching
         run: |
