@@ -70,7 +70,7 @@ jobs:
           platforms: ${{ matrix.platforms }}
           tags: |
             ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}
-            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{1}{2}:latest', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
+            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{0}{1}:latest', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
           build-args: |
             VCS_REF=${{ github.sha }}
             BUILD_DATE=${{ env.BUILD_DATE }}
@@ -85,7 +85,7 @@ jobs:
           platforms: ${{ matrix.platforms }}
           tags: |
             ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}-onbuild
-            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{1}{2}:latest-onbuild', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
+            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{0}{1}:latest-onbuild', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
           build-args: |
             VCS_REF=${{ github.sha }}
             BUILD_DATE=${{ env.BUILD_DATE }}
