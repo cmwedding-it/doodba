@@ -1,4 +1,4 @@
-name: Docker image for 15.0
+name: Docker image
 
 on:
   workflow_dispatch:
@@ -7,9 +7,31 @@ permissions:
   packages: write
     
 jobs:
-  base:
+  build:
     runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test modern Odoo versions with latest Postgres version
+        odoo_version: ["16.0"]
+        platforms: ["linux/amd64,linux/arm64"]
+        include:
+          # Older odoo versions don't support latest postgres and Python versions
+          - odoo_version: "16.0"
+            platforms: "linux/amd64,linux/arm64"
+          - odoo_version: "15.0"
+            platforms: "linux/amd64"
+    
+    env:
+      # Indicates what's the equivalent to cmwedding-it/doodba:latest image
+      LATEST_RELEASE: "16.0"
+      DOCKER_REPO: cmwedding-it/doodba
+
     steps:
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date '+%Y-%m-%dT%H:%M:%S.%N%:z')" >> $GITHUB_ENV
+
       - name: Check out repository
         uses: actions/checkout@v3
 
@@ -18,63 +40,55 @@ jobs:
         with:
           repository: Tecnativa/doodba
           path: src
-    
+
       - name: Move custom dockerfiles to src
         run: mv *.Dockerfile src/
 
       - name: Patch pip installer to allow caching
         run: |
           sed -i -E 's/^    _install_command = \["pip", "install", "--no-cache-dir", "-r"\]$/    _install_command = \["pip", "install", "-r"\]/' src/lib/doodbalib/installer.py
-    
-      - name: Get date & commit sha
-        run: |
-          echo "BUILD_DATE=$(date --rfc-3339 ns)" >> $GITHUB_OUTPUT && \
-          echo "VCS_REF=$(git -C src rev-parse HEAD)" >> $GITHUB_OUTPUT
-        id: build_args
 
-      - name: Build base
-        id: build_image_base
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: doodba
-          tags: 15.0-bookworm
-          build-args: |
-            ODOO_VERSION=15.0
-            VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
-            BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
-          containerfiles: |
-            src/base.Dockerfile
-          context: ./src
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Push base to GHCR
-        uses: redhat-actions/push-to-registry@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: github.repository == 'tecnativa/doodba' && github.ref == 'refs/heads/master'
+        uses: docker/login-action@v3
         with:
-          image: ${{ steps.build_image_base.outputs.image }}
-          tags: ${{ steps.build_image_base.outputs.tags }}
-          registry: ghcr.io/cmwedding-it
+          registry: ghcr.io
           username: oskardotglobal
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build onbuild
-        id: build_image_onbuild
-        uses: redhat-actions/buildah-build@v2
+      - name: Build and push base
+        uses: docker/build-push-action@v5
         with:
-          image: doodba
-          tags: 15.0-bookworm-onbuild
-          build-args: |
-            ODOO_VERSION=15.0
-            VCS_REF=${{ steps.build_args.outputs.VCS_REF }}
-            BUILD_DATE=${{ steps.build_args.outputs.BUILD_DATE }}
-          containerfiles: |
-            src/onbuild.Dockerfile
           context: ./src
+          file: ./src/${{ matrix.odoo_version }}.Dockerfile
+          platforms: ${{ matrix.platforms }}
+          tags: |
+            ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}
+            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{1}{2}:latest', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            ODOO_VERSION=${{ matrix.odoo_version }}
 
-      - name: Push onbuild to GHCR
-        uses: redhat-actions/push-to-registry@v2
+
+      - name: Build and push onbuild
+        uses: docker/build-push-action@v5
         with:
-          image: ${{ steps.build_image_onbuild.outputs.image }}
-          tags: ${{ steps.build_image_onbuild.outputs.tags }}
-          registry: ghcr.io/cmwedding-it
-          username: oskardotglobal
-          password: ${{ secrets.GITHUB_TOKEN }}
-    
+          context: .
+          file: ./onbuild.Dockerfile
+          platforms: ${{ matrix.platforms }}
+          tags: |
+            ghcr.io/${{ env.DOCKER_REPO }}${{ env.DOCKER_REPO_SUFFIX }}:${{ matrix.odoo_version }}-onbuild
+            ${{ matrix.odoo_version == env.LATEST_RELEASE && format('ghcr.io/{1}{2}:latest-onbuild', env.DOCKER_REPO, env.DOCKER_REPO_SUFFIX) || '' }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            ODOO_VERSION=${{ matrix.odoo_version }}
+
+

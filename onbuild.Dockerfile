@@ -1,5 +1,7 @@
 # Onbuild version, with all the magic
-FROM ghcr.io/cmwedding-it/doodba:15.0-bookworm
+
+ARG ODOO_VERSION
+FROM ghcr.io/cmwedding-it/doodba:$ODOO_VERSION
 
 # Enable setting custom uids for odoo user during build of scaffolds
 ONBUILD ARG UID=1000
@@ -78,3 +80,15 @@ ONBUILD ARG DB_VERSION=latest
 ONBUILD RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/root/.cache /opt/odoo/common/build && sync
 ONBUILD VOLUME ["/var/lib/odoo"]
 ONBUILD USER odoo
+
+# Metadata
+ARG VCS_REF
+ARG BUILD_DATE
+ARG VERSION
+LABEL org.label-schema.schema-version="$VERSION" \
+      org.label-schema.vendor=Tecnativa \
+      org.label-schema.license=Apache-2.0 \
+      org.label-schema.build-date="$BUILD_DATE" \
+      org.label-schema.vcs-ref="$VCS_REF" \
+      org.label-schema.vcs-url="https://github.com/Tecnativa/doodba"
+      
